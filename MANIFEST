@@ -1,0 +1,14 @@
+Changes
+examples/release.ini
+examples/release.pl
+examples/release.sh
+lib/CPAN/Testers/Data/Release.pm
+Makefile.PL
+MANIFEST
+META.yml
+README
+t/01base.t
+t/90podtest.t
+t/91podcover.t
+t/94metatest.t
+t/95changedate.t

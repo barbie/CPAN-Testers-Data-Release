@@ -1,0 +1,94 @@
+CPAN::Testers::Data::Release
+
+NAME
+       CPAN::Testers::Data::Release - CPAN Testers Release database generator
+
+SYNOPSIS
+         perl release.pl --config=<file>
+
+DESCRIPTION
+       This distribution contains the code that extracts the data from the
+       release_summary table in the cpanstats database. The data extracted
+       represents the data relating to the public releases of Perl, i.e. no
+       patches and official releases only.
+
+SQLite DATABASE
+       The database created uses the following schema:
+
+         CREATE TABLE release (
+             dist    text    not null,
+             version text    not null,
+             pass    integer not null,
+             fail    integer not null,
+             na      integer not null,
+             unknown integer not null
+         );
+
+         CREATE INDEX release__dist ON release ( dist );
+         CREATE INDEX release__version ON release ( version );
+
+INTERFACE
+       The Constructor
+
+       * new
+
+           Instatiates the object CPAN::Testers::Data::Release:
+
+             my $obj = CPAN::Testers::Data::Release->new();
+
+       Public Methods
+
+       * process
+
+       * help
+
+       Private Methods
+
+       * _init_options
+
+BECOME A TESTER
+       Whether you have a common platform or a very unusual one, you can help
+       by testing modules you install and submitting reports. There are plenty
+       of module authors who could use test reports and helpful feedback on
+       their modules and distributions.
+
+       If you’d like to get involved, please take a look at the CPAN Testers
+       Wiki, where you can learn how to install and configure one of the
+       recommended smoke tools.
+
+       For further help and advice, please subscribe to the the CPAN Testers
+       discussion mailing list.
+
+         CPAN Testers Wiki - http://wiki.cpantesters.org
+         CPAN Testers Discuss mailing list
+           - http://lists.cpan.org/showlist.cgi?name=cpan-testers-discuss
+
+BUGS, PATCHES & FIXES
+       There are no known bugs at the time of this release. However, if you
+       spot a bug or are experiencing difficulties, that is not explained
+       within the POD documentation, please send bug reports and patches to
+       the RT Queue (see below).
+
+       Fixes are dependant upon their severity and my availablity. Should a
+       fix not be forthcoming, please feel free to (politely) remind me.
+
+       RT:
+       http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Testers-Data-Release
+
+SEE ALSO
+       CPAN::Testers::Data::Generator 
+       CPAN::Testers::Data::Uploads
+
+	http://www.cpantesters.org/
+	http://stats.cpantesters.org/
+	http://wiki.cpantesters.org/
+	http://blog.cpantesters.org/
+
+AUTHOR
+         Barbie <barbie@cpan.org> 2009-present
+
+COPYRIGHT AND LICENSE
+         Copyright (C) 2009 Barbie <barbie@cpan.org>
+
+         This module is free software; you can redistribute it and/or
+         modify it under the same terms as Perl itself.
