@@ -1,4 +1,9 @@
 Revision history for Perl distribution CPAN-Testers-Data-Release
 
+0.02	13/07/2009
+	- Configuration fixes.
+	- Runtime checks added.
+	- Backup logic changed due to too large a resource drain on MySQL DB.
+
 0.01	07/06/2009
-	- Initial release
+	- Initial release.

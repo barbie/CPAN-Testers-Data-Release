@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 #----------------------------------------------------------------------------
 # Library Modules
@@ -25,7 +25,7 @@ my (%backups);
 
 my %phrasebook = (
     # MySQL database
-    'SelectAll'         => 'SELECT dist,version,sum(pass),sum(fail),sum(na),sum(unknown) FROM release_summary WHERE perlmat=1',
+    'SelectAll'         => 'SELECT dist,version,pass,fail,na,unknown FROM release_summary WHERE perlmat=1',
 
     # SQLite database
     'CreateTable'       => 'CREATE TABLE release (dist text not null, version text not null, pass integer not null, fail integer not null, na integer not null, unknown integer not null)',
@@ -34,6 +34,8 @@ my %phrasebook = (
 
     'DeleteAll'         => 'DELETE FROM release',
     'InsertRelease'     => 'INSERT INTO release (dist,version,pass,fail,na,unknown) VALUES (?,?,?,?,?,?)',
+    'UpdateRelease'     => 'UPDATE release SET pass=?,fail=?,na=?,unknown=? WHERE dist=? AND version=?',
+    'SelectRelease'     => 'SELECT * FROM release WHERE dist=? AND version=?',
 );
 #----------------------------------------------------------------------------
 # The Application Programming Interface
@@ -52,11 +54,13 @@ sub DESTROY {
     my $self = shift;
 }
 
-__PACKAGE__->mk_accessors(qw( dbx ));
+__PACKAGE__->mk_accessors(qw( dbx logfile logclean ));
 
 sub process {
     my $self = shift;
     my $db = $self->dbx;
+
+    $self->_log("Create backup databases");
 
     for my $driver (keys %backups) {
         if($backups{$driver}{'exists'}) {
@@ -75,7 +79,17 @@ sub process {
     my $rows = $db->iterator('array',$phrasebook{'SelectAll'});
     while(my $row = $rows->()) {
         for my $driver (keys %backups) {
-            $backups{$driver}{db}->do_query($phrasebook{'InsertRelease'},@$row);
+            my @dist = $backups{$driver}{db}->get_query('array',$phrasebook{'SelectRelease'},$row->[0],$row->[1]);
+            if(@dist) {
+                $backups{$driver}{db}->do_query($phrasebook{'UpdateRelease'},
+                    ($row->[2] + $dist[0]->[2]),
+                    ($row->[3] + $dist[0]->[3]),
+                    ($row->[4] + $dist[0]->[4]),
+                    ($row->[5] + $dist[0]->[5]),
+                    $row->[0],$row->[1]);
+            } else {
+                $backups{$driver}{db}->do_query($phrasebook{'InsertRelease'},@$row);
+            }
         }
     }
 
