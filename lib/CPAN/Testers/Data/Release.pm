@@ -21,8 +21,6 @@ use IO::File;
 #----------------------------------------------------------------------------
 # Variables
 
-my (%backups);
-
 my %phrasebook = (
     # MySQL database
     'SelectAll'         => 'SELECT dist,version,pass,fail,na,unknown FROM release_summary WHERE perlmat=1 ORDER BY dist',
@@ -31,9 +29,10 @@ my %phrasebook = (
     'AddRow'            => 'INSERT INTO release_summary (dist,version,id,guid,oncpan,distmat,perlmat,patched,pass,fail,na,unknown) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
 
     'SelectDists'       => 'SELECT dist,version FROM release_summary WHERE id > ?',
-    'DelRow'            => 'DELETE FROM release_summary WHERE dist=? AND version=?',
+    'SelectDist'        => 'SELECT dist,version,id,pass,fail,na,unknown FROM release_summary WHERE perlmat=1 AND dist=? AND version=?',
 
     # SQLite database
+    'DeleteTable'       => 'DROP TABLE IF EXISTS release',
     'CreateTable'       => 'CREATE TABLE release (dist text not null, version text not null, pass integer not null, fail integer not null, na integer not null, unknown integer not null)',
     'CreateDistIndex'   => 'CREATE INDEX release__dist ON release ( dist )',
     'CreateVersIndex'   => 'CREATE INDEX release__version ON release ( version )',
@@ -42,7 +41,9 @@ my %phrasebook = (
     'InsertRelease'     => 'INSERT INTO release (dist,version,pass,fail,na,unknown) VALUES (?,?,?,?,?,?)',
     'UpdateRelease'     => 'UPDATE release SET pass=?,fail=?,na=?,unknown=? WHERE dist=? AND version=?',
     'SelectRelease'     => 'SELECT * FROM release WHERE dist=? AND version=?',
+    'DeleteRelease'     => 'DELETE FROM release WHERE dist=? AND version=?',
 );
+
 #----------------------------------------------------------------------------
 # The Application Programming Interface
 
@@ -60,52 +61,89 @@ sub DESTROY {
     my $self = shift;
 }
 
-__PACKAGE__->mk_accessors(qw( dbx logfile logclean ));
+__PACKAGE__->mk_accessors(qw( idfile logfile logclean ));
 
 sub process {
     my $self = shift;
-    if($self->{clean}) { $self->clean() }
-    else               { $self->backup() }
+    if($self->{clean}) 		        { $self->clean() }
+    elsif($self->{RELEASE}{exists}) { $self->backup_from_last() }
+    else               		        { $self->backup_from_start() }
 }
 
-sub backup {
+sub backup_from_last {
     my $self = shift;
-    my $db = $self->dbx;
 
-    $self->_log("Create backup databases");
+    $self->_log("Find new start");
 
-    # write to a clean database
-    for my $driver (keys %backups) {
-        if($backups{$driver}{'exists'}) {
-            $backups{$driver}{db}->do_query($phrasebook{'DeleteAll'});
-        } elsif($driver =~ /SQLite/i) {
-            $backups{$driver}{db}->do_query($phrasebook{'CreateTable'});
-            $backups{$driver}{db}->do_query($phrasebook{'CreateDistIndex'});
-            $backups{$driver}{db}->do_query($phrasebook{'CreateVersIndex'});
-        } else {
-            $backups{$driver}{db}->do_query($phrasebook{'CreateTable'});
+    my $lastid = 0;
+    my $idfile = $self->idfile();
+    if($idfile && -f $idfile) {
+        if(my $fh = IO::File->new($idfile,'r')) {
+            my @lines = <$fh>;
+            ($lastid) = $lines[0] =~ /(\d+)/;
+            $fh->close;
         }
     }
 
-    $self->_log("Backup via DBD drivers");
+    $lastid ||= 0;
+    $self->_log("Starting from $lastid");
+
+    # retrieve data from master database
+    my $rows = $self->{CPANSTATS}{dbh}->iterator('hash',$phrasebook{'SelectDists'},$lastid);
+    while(my $row = $rows->()) {
+        $self->_log("... dist=$row->{dist}, version=$row->{version}");
+        my $next = $self->{CPANSTATS}{dbh}->iterator('hash',$phrasebook{'SelectDist'},$row->{dist},$row->{version});
+        my ($pass,$fail,$na,$unknown) = (0,0,0,0);
+        while(my $rs = $next->()) {
+            $pass    += $rs->{pass};
+            $fail    += $rs->{fail};
+            $na      += $rs->{na};
+            $unknown += $rs->{unknown};
+            $lastid = $rs->{id} if($lastid < $rs->{id});
+        }
+
+        $self->{RELEASE}{dbh}->do_query($phrasebook{'DeleteRelease'},$row->{dist},$row->{version});
+        $self->{RELEASE}{dbh}->do_query($phrasebook{'InsertRelease'},$row->{dist},$row->{version},$pass,$fail,$na,$unknown);
+    }
+
+    $self->_log("Writing lastid=$lastid");
+
+    if($idfile) {
+        if(my $fh = IO::File->new($idfile,'w+')) {
+            print $fh "$lastid\n";
+            $fh->close;
+        }
+    }
+
+    $self->_log("Backup completed");
+}
+
+sub backup_from_start {
+    my $self = shift;
+
+    $self->_log("Create backup database");
+
+    # start with a clean slate
+    $self->{RELEASE}{dbh}->do_query($phrasebook{'DeleteTable'});
+    $self->{RELEASE}{dbh}->do_query($phrasebook{'CreateTable'});
+    $self->{RELEASE}{dbh}->do_query($phrasebook{'CreateDistIndex'});
+    $self->{RELEASE}{dbh}->do_query($phrasebook{'CreateVersIndex'});
+
+    $self->_log("Generate backup data");
 
     # store data from master database
     my %data;
     my $dist = '';
-    my $rows = $db->iterator('array',$phrasebook{'SelectAll'});
+    my $rows = $self->{CPANSTATS}{dbh}->iterator('array',$phrasebook{'SelectAll'});
     while(my $row = $rows->()) {
         if($dist && $dist ne $row->[0]) {
             $self->_log("... dist=$dist");
-
-            # write data out
-            for my $driver (keys %backups) {
-                for my $vers (keys %data) {
-                    $backups{$driver}{db}->do_query($phrasebook{'InsertRelease'},@{ $data{$vers} });
-                }
+            for my $vers (keys %data) {
+                $self->{RELEASE}{dbh}->do_query($phrasebook{'InsertRelease'},@{ $data{$vers} });
             }
 
-	        %data = ();
-	    }
+            %data = ();
+        }
 
         $dist = $row->[0];
 
@@ -121,55 +159,41 @@ sub backup {
 
     if($dist) {
         $self->_log("... dist=$dist");
-        # write data out
-        for my $driver (keys %backups) {
-            for my $vers (keys %data) {
-                $backups{$driver}{db}->do_query($phrasebook{'InsertRelease'},@{ $data{$vers} });
-            }
+        for my $vers (keys %data) {
+            $self->{RELEASE}{dbh}->do_query($phrasebook{'InsertRelease'},@{ $data{$vers} });
         }
     }
 
-    # handle the CSV exception
-    if($backups{CSV}) {
-        $self->_log("Backup to CSV file");
-        $backups{CSV}{db} = undef;  # close db handle
-        my $fh1 = IO::File->new('release','r') or die "Cannot read temporary database file 'release'\n";
-        my $fh2 = IO::File->new($backups{CSV}{dbfile},'w+') or die "Cannot write to CSV database file $backups{CSV}{dbfile}\n";
-        while(<$fh1>) { print $fh2 $_ }
-        $fh1->close;
-        $fh2->close;
-        unlink('release');
-    }
+    $self->_log("Backup completed");
 }
 
 # sub to remove duplicates in the matser database.
 sub clean {
     my $self = shift;
-    my $db = $self->dbx;
 
     $self->_log("Clean master database");
 
     my %data;
     my $dist = '';
-    my $rows = $db->iterator('hash',$phrasebook{'SelectRows'});
+    my $rows = $self->{CPANSTATS}{dbh}->iterator('hash',$phrasebook{'SelectRows'});
     while(my $row = $rows->()) {
         if($dist && $dist ne $row->{dist}) {
-    	    $db->do_query($phrasebook{'DelRows'},$dist);
+    	    $self->{CPANSTATS}{dbh}->do_query($phrasebook{'DelRows'},$dist);
             $self->_log("DelRows: $dist");
-            for my $vers (keys %data) {
-                for my $code (keys %{$data{$vers}}) {
-                    my $rowx = $data{$vers}{$code};
-                        $db->do_query($phrasebook{'AddRow'},$dist,$vers,
-                    $rowx->{id},$rowx->{guid},
-                    $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
-                    $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown});
-                            $self->_log('AddRow: ' . join(', ',
-                    $dist,$vers,
-                    $rowx->{id},$rowx->{guid},
-                    $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
-                    $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown}) );
-                }
-            }
+	        for my $vers (keys %data) {
+		        for my $code (keys %{$data{$vers}}) {
+        		    my $rowx = $data{$vers}{$code};
+	                $self->{CPANSTATS}{dbh}->do_query($phrasebook{'AddRow'},$dist,$vers,
+                        $rowx->{id},$rowx->{guid},
+                        $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
+                        $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown});
+                    $self->_log('AddRow: ' . join(', ',
+                        $dist,$vers,
+                        $rowx->{id},$rowx->{guid},
+                        $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
+                        $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown}) );
+		        }
+	        }
 
             %data = ();
         }
@@ -180,23 +204,25 @@ sub clean {
     }
 
     if($dist) {
-        $db->do_query($phrasebook{'DelRows'},$dist);
+        $self->{CPANSTATS}{dbh}->do_query($phrasebook{'DelRows'},$dist);
         $self->_log("DelRows: $dist");
         for my $vers (keys %data) {
-	    for my $code (keys %{$data{$vers}}) {
-	        my $rowx = $data{$vers}{$code};
-                $db->do_query($phrasebook{'AddRow'},$dist,$vers,
-		    $rowx->{id},$rowx->{guid},
-		    $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
-		    $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown});
-                $self->_log('AddRow: ' . join(', ',
-		    $dist,$vers,
-		    $rowx->{id},$rowx->{guid},
-		    $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
-		    $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown}) );
-	    }
-	}
+            for my $code (keys %{$data{$vers}}) {
+                my $rowx = $data{$vers}{$code};
+                    $self->{CPANSTATS}{dbh}->do_query($phrasebook{'AddRow'},$dist,$vers,
+                        $rowx->{id},$rowx->{guid},
+                        $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
+                        $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown});
+                    $self->_log('AddRow: ' . join(', ',
+                        $dist,$vers,
+                        $rowx->{id},$rowx->{guid},
+                        $rowx->{oncpan},$rowx->{distmat},$rowx->{perlmat},$rowx->{patched},
+                        $rowx->{pass},$rowx->{fail},$rowx->{na},$rowx->{unknown}) );
+            }
+        }
     }
+
+    $self->_log("Clean completed");
 }
 
 sub help {
@@ -252,34 +278,17 @@ sub _init_options {
     # load configuration
     my $cfg = Config::IniFiles->new( -file => $options{config} );
 
+    $self->idfile(  $cfg->val('MASTER','idfile'  ) );
     $self->logfile(  $cfg->val('MASTER','logfile'  ) );
     $self->logclean( $cfg->val('MASTER','logclean' ) || 0 );
 
     # configure upload DB
-    $self->help(1,"No configuration for CPANSTATS database") unless($cfg->SectionExists('CPANSTATS'));
-    my %opts = map {$_ => ($cfg->val('CPANSTATS',$_) || undef);} qw(driver database dbfile dbhost dbport dbuser dbpass);
-    my $db = CPAN::Testers::Common::DBUtils->new(%opts);
-    $self->help(1,"Cannot configure CPANSTATS database") unless($db);
-    $self->dbx($db);
-
-    $self->help(1,"No configuration for BACKUPS with backup option")    unless($cfg->SectionExists('BACKUPS'));
-    my @drivers = $cfg->val('BACKUPS','drivers');
-    for my $driver (@drivers) {
-        $self->help(1,"No configuration for backup option '$driver'")   unless($cfg->SectionExists($driver));
-
-        my %opt = map {$_ => ($cfg->val($driver,$_)||undef)} qw(driver database dbfile dbhost dbport dbuser dbpass);
-        $backups{$driver}{'exists'} = $driver =~ /SQLite/i ? -f $opt{database} : 1;
-
-        # CSV is a bit of an oddity!
-        if($driver =~ /CSV/i) {
-            $backups{$driver}{'exists'} = 0;
-            $backups{$driver}{'dbfile'} = $opt{dbfile};
-            $opt{dbfile} = 'release';
-            unlink($opt{dbfile});
-        }
-
-        $backups{$driver}{db} = CPAN::Testers::Common::DBUtils->new(%opt);
-        $self->help(1,"Cannot configure BACKUPS database for '$driver'")   unless($backups{$driver}{db});
+    for my $dbname (qw(CPANSTATS RELEASE)) {
+        $self->help(1,"No configuration for $dbname database") unless($cfg->SectionExists($dbname));
+        my %opts = map {$_ => ($cfg->val($dbname,$_) || undef);} qw(driver database dbfile dbhost dbport dbuser dbpass);
+        $self->{$dbname}{exists} = $opts{driver} =~ /SQLite/i ? -f $opts{database} : 1;
+        $self->{$dbname}{dbh} = CPAN::Testers::Common::DBUtils->new(%opts);
+        $self->help(1,"Cannot configure $dbname database") unless($self->{$dbname}{dbh});
     }
 
     $self->{clean} = 1 if($options{clean});
