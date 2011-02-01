@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                     CPAN-Testers-Data-Release
-version:                  0.02
+version:                  0.03
 abstract:                 CPAN Testers Release database generator
 author:
   - Barbie <barbie@cpan.org>
@@ -27,7 +27,7 @@ build_requires:
 provides:
   CPAN::Testers::Data::Release:
     file:     lib/CPAN/Testers/Data/Release.pm
-    version:  0.02
+    version:  0.03
 no_index:
   directory:
     - t

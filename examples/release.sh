@@ -16,6 +16,9 @@ echo `date +"$date_format"` "Compressing Release data..." >>logs/release.log
 if [ -f $BASE/release/data/release.db ];
 then
 
+  cd $BASE/db
+  cp $BASE/release/data/release.db .
+
   cd $BASE/dbx
   rm -f release.*
   cp $BASE/release/data/release.db .  ; gzip  release.db
@@ -28,4 +31,5 @@ then
 
 fi
 
+cd $BASE/release
 echo `date +"$date_format"` "STOP" >>logs/release.log
