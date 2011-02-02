@@ -2,7 +2,7 @@
 use strict;
 
 use vars qw($VERSION);
-$VERSION = '0.01';
+$VERSION = '0.03';
 
 $|++;
 
@@ -29,7 +29,7 @@ release.pl - creates, updates and/or backs up the uploads database.
 
 =head1 SYNOPSIS
 
-  perl release.pl --config=<file> [ -h | -v ]
+  perl release.pl --config=<file> [--clean] [ -h | -v ]
 
 =head1 DESCRIPTION
 
@@ -64,7 +64,7 @@ F<http://wiki.cpantesters.org/>
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009 Barbie for Miss Barbell Productions.
+  Copyright (C) 2009-2011 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
   modify it under the same terms as Perl itself.

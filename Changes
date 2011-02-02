@@ -2,9 +2,10 @@ Revision history for Perl distribution CPAN-Testers-Data-Release
 
 0.03	current
 	- added clean functionality to help remove any decrepancies.
-	- initial revision of backup process
-	- removed support for CSV backups
+	- initial revision of backup process.
+	- removed support for CSV backups.
 	- added ability to continue backup process from known point.
+	- updated examples.
 
 0.02	13/07/2009
 	- Configuration fixes.

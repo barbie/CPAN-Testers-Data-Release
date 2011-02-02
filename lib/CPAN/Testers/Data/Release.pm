@@ -233,7 +233,7 @@ sub help {
     if($full) {
         print <<HERE;
 
-Usage: $0 --config=<file> [-h] [-v]
+Usage: $0 --config=<file> [--clean] [-h] [-v]
 
   --config=<file>   database configuration file
   --clean           clean master database of duplicates
@@ -367,9 +367,13 @@ Instatiates the object CPAN::Testers::Data::Release:
 
 Shorthand function to run methods based on command line options.
 
-=item * backup
+=item * backup_from_last
 
-Run backup processes.
+Run backup processes from the last known update.
+
+=item * backup_from_start
+
+Run backup processes recreating the complete backup database from scratch.
 
 =item * clean
 
