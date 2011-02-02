@@ -1,6 +1,6 @@
 Revision history for Perl distribution CPAN-Testers-Data-Release
 
-0.03	current
+0.03	02/02/2011
 	- added clean functionality to help remove any decrepancies.
 	- initial revision of backup process.
 	- removed support for CSV backups.
