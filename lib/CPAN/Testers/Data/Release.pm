@@ -436,13 +436,14 @@ F<http://blog.cpantesters.org/>
 
 =head1 AUTHOR
 
-  Barbie <barbie@cpan.org> 2009-present
+  Barbie, <barbie@cpan.org>
+  for Miss Barbell Productions <http://www.missbarbell.co.uk>.
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009-2011 Barbie <barbie@cpan.org>
+  Copyright (C) 2009-2012 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
-  modify it under the same terms as Perl itself.
+  modify it under the Artistic License 2.0.
 
 =cut

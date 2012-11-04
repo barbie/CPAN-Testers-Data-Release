@@ -4,6 +4,7 @@ examples/release.pl
 examples/release.sh
 examples/release-clean.sh
 lib/CPAN/Testers/Data/Release.pm
+LICENSE
 Makefile.PL
 MANIFEST
 META.yml
