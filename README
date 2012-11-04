@@ -9,7 +9,7 @@ only.
 
 USAGE
 
-  perl release.pl --config=<file>
+  perl release.pl --config=<file> [--clean] [ -h | -v ]
 
 DEPENDENCIES
 
