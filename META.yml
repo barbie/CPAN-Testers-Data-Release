@@ -10,6 +10,7 @@ distribution_type:        module
 installdirs:              site
 
 requires:
+  perl:                           5.006
   CPAN::Testers::Common::DBUtils: 0.08
   Config::IniFiles:               0
   File::Basename:                 0

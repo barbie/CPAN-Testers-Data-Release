@@ -1,18 +1,29 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use 5.006;
+
 use ExtUtils::MakeMaker;
+
 WriteMakefile(
-    'NAME'              => 'CPAN::Testers::Data::Release',
-    'VERSION_FROM'      => 'lib/CPAN/Testers/Data/Release.pm',
-    'PREREQ_PM'         => {
-        'CPAN::Testers::Common::DBUtils'    => 0,
+    AUTHOR              => 'Barbie <barbie@cpan.org>',
+    NAME                => 'CPAN::Testers::Data::Release',
+    VERSION_FROM        => 'lib/CPAN/Testers/Data/Release.pm',
+    ABSTRACT            => 'CPAN Testers Release database generator',
+    NO_META             => 1,
+    PREREQ_PM           => {
+
+        # runtime prereqs
+        'CPAN::Testers::Common::DBUtils'    => '0.08',
         'Config::IniFiles'                  => 0,
         'File::Basename'                    => 0,
         'File::Path'                        => 0,
         'Getopt::Long'                      => 0,
         'IO::File'                          => 0,
-    },
-    'NO_META'           => 1,
 
-    ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
-      (ABSTRACT	=> 'CPAN Testers Release database generator',
-       AUTHOR	=> 'Barbie <barbie@cpan.org>') : ()),
+        # build/test prereqs
+        'Test::More'                        => '0.70',
+
+    }
 );
