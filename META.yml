@@ -24,6 +24,7 @@ recommends:
   Test::Pod::Coverage:            0.08
 build_requires:
   Test::More:                     0.70
+  Test::Trap:                     0
 
 provides:
   CPAN::Testers::Data::Release:
