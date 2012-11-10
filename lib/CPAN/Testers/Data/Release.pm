@@ -164,6 +164,8 @@ sub backup_from_start {
         }
     }
 
+    $self->{RELEASE}{exists} = 1;
+
     $self->_log("Backup completed");
 }
 
@@ -272,13 +274,13 @@ sub _init_options {
     $self->help(1)  if($options{help});
     $self->help(0)  if($options{version});
 
-    $self->help(1,"Must specific the configuration file")               unless($options{config});
+    $self->help(1,"Must specific the configuration file")               unless(   $options{config});
     $self->help(1,"Configuration file [$options{config}] not found")    unless(-f $options{config});
 
     # load configuration
     my $cfg = Config::IniFiles->new( -file => $options{config} );
 
-    $self->idfile(  $cfg->val('MASTER','idfile'  ) );
+    $self->idfile(   $cfg->val('MASTER','idfile'   ) );
     $self->logfile(  $cfg->val('MASTER','logfile'  ) );
     $self->logclean( $cfg->val('MASTER','logclean' ) || 0 );
 

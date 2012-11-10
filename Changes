@@ -1,4 +1,5 @@
 Revision history for Perl distribution CPAN-Testers-Data-Release
+================================================================
 
         - spelling fixes. (thanks to Florian Schlichting & Gregor Herrmann).
         - change file dates changed to meet W3CDTF standards.
@@ -7,6 +8,7 @@ Revision history for Perl distribution CPAN-Testers-Data-Release
         - added META.json.
         - added minimum perl version (5.006).
         - reworked Makefile.PL for clarity.
+        - more tests.
 
 0.03    2011-02-02
         - added clean functionality to help remove any decrepancies.
