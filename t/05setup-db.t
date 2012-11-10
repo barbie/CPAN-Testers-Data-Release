@@ -91,6 +91,8 @@ sub create_config {
     my $fh = IO::File->new($f,'w+') or return;
     print $fh <<PRINT;
 [MASTER]
+logfile=t/_DBDIR/release.log
+logclean=1
 
 
 ; database configuration
