@@ -23,7 +23,7 @@ use IO::File;
 
 my %phrasebook = (
     # MySQL database
-    'SelectAll'         => 'SELECT dist,version,pass,fail,na,unknown FROM release_summary WHERE perlmat=1 ORDER BY dist',
+    'SelectAll'         => 'SELECT dist,version,pass,fail,na,unknown,id FROM release_summary WHERE perlmat=1 ORDER BY dist',
     'SelectRows'        => 'SELECT * FROM release_summary ORDER BY dist',
     'DelRows'           => 'DELETE FROM release_summary WHERE dist=?',
     'AddRow'            => 'INSERT INTO release_summary (dist,version,id,guid,oncpan,distmat,perlmat,patched,pass,fail,na,unknown) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
@@ -120,6 +120,7 @@ sub backup_from_last {
 
 sub backup_from_start {
     my $self = shift;
+    my $lastid = 0;
 
     $self->_log("Create backup database");
 
@@ -134,9 +135,9 @@ sub backup_from_start {
     # store data from master database
     my %data;
     my $dist = '';
-    my $rows = $self->{CPANSTATS}{dbh}->iterator('array',$phrasebook{'SelectAll'});
+    my $rows = $self->{CPANSTATS}{dbh}->iterator('hash',$phrasebook{'SelectAll'});
     while(my $row = $rows->()) {
-        if($dist && $dist ne $row->[0]) {
+        if($dist && $dist ne $row->{dist}) {
             $self->_log("... dist=$dist");
             for my $vers (keys %data) {
                 $self->{RELEASE}{dbh}->do_query($phrasebook{'InsertRelease'},@{ $data{$vers} });
@@ -145,16 +146,18 @@ sub backup_from_start {
             %data = ();
         }
 
-        $dist = $row->[0];
+        $dist = $row->{dist};
 
-        if($data{$row->[0]} && $data{$row->[0]}{$row->[1]}) {
-            $data{$row->[0]}{$row->[1]}->[2] += $row->[2];
-            $data{$row->[0]}{$row->[1]}->[3] += $row->[3];
-            $data{$row->[0]}{$row->[1]}->[4] += $row->[4];
-            $data{$row->[0]}{$row->[1]}->[5] += $row->[5];
+        if($data{$row->{dist}} && $data{$row->{dist}}{$row->{version}}) {
+            $data{$row->{dist}}{$row->{version}}->[2] += $row->{pass};
+            $data{$row->{dist}}{$row->{version}}->[3] += $row->{fail};
+            $data{$row->{dist}}{$row->{version}}->[4] += $row->{na};
+            $data{$row->{dist}}{$row->{version}}->[5] += $row->{unknown};
         } else {
-            $data{$row->[1]} = $row;
+            $data{$row->{version}} = [ map { $row->{$_} } qw(dist version pass fail na unknown) ];
         }
+
+        $lastid = $row->{id} if($lastid < $row->{id});
     }
 
     if($dist) {
@@ -165,6 +168,14 @@ sub backup_from_start {
     }
 
     $self->{RELEASE}{exists} = 1;
+
+    my $idfile = $self->idfile();
+    if($idfile) {
+        if(my $fh = IO::File->new($idfile,'w+')) {
+            print $fh "$lastid\n";
+            $fh->close;
+        }
+    }
 
     $self->_log("Backup completed");
 }

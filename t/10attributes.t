@@ -2,11 +2,9 @@
 use strict;
 
 use CPAN::Testers::Data::Release;
-use File::Spec;
 use Test::More tests => 13;
 
-my $config = File::Spec->catfile('t','_DBDIR','10attributes.ini');
-my $idfile = File::Spec->catfile('t','_DBDIR','idfile.txt');
+my $config = 't/_DBDIR/10attributes.ini';
 
 my $obj;
 eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
