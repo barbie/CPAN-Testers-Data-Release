@@ -148,11 +148,11 @@ sub backup_from_start {
 
         $dist = $row->{dist};
 
-        if($data{$row->{dist}} && $data{$row->{dist}}{$row->{version}}) {
-            $data{$row->{dist}}{$row->{version}}->[2] += $row->{pass};
-            $data{$row->{dist}}{$row->{version}}->[3] += $row->{fail};
-            $data{$row->{dist}}{$row->{version}}->[4] += $row->{na};
-            $data{$row->{dist}}{$row->{version}}->[5] += $row->{unknown};
+        if($data{$row->{version}}) {
+            $data{$row->{version}}->[2] += $row->{pass};
+            $data{$row->{version}}->[3] += $row->{fail};
+            $data{$row->{version}}->[4] += $row->{na};
+            $data{$row->{version}}->[5] += $row->{unknown};
         } else {
             $data{$row->{version}} = [ map { $row->{$_} } qw(dist version pass fail na unknown) ];
         }
