@@ -15,12 +15,13 @@ WriteMakefile(
     PREREQ_PM           => {
 
         # runtime prereqs
+        'Class::Accessor::Fast'             => '0',
         'CPAN::Testers::Common::DBUtils'    => '0.08',
-        'Config::IniFiles'                  => 0,
-        'File::Basename'                    => 0,
-        'File::Path'                        => 0,
-        'Getopt::Long'                      => 0,
-        'IO::File'                          => 0,
+        'Config::IniFiles'                  => '0',
+        'File::Basename'                    => '0',
+        'File::Path'                        => '0',
+        'Getopt::Long'                      => '0',
+        'IO::File'                          => '0',
 
         # build/test prereqs
         'Test::More'                        => '0.70',
