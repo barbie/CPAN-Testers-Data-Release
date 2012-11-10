@@ -130,31 +130,6 @@ database=t/_DBDIR/release.db
 PRINT
 
     $fh->close;
-
-
-    # logging test config
-    $f = 't/_DBDIR/50logging.ini';
-    unlink $f if -f $f;
-
-    $fh = IO::File->new($f,'w+') or return;
-    print $fh <<PRINT;
-[MASTER]
-idfile=t/_DBDIR/idfile.txt
-logfile=t/_DBDIR/release.log
-logclean=0
-
-; database configuration
-
-[CPANSTATS]
-$dbcfg
-
-[RELEASE]
-driver=SQLite
-database=t/_DBDIR/release.db
-
-PRINT
-
-    $fh->close;
 }
 
 sub create_sqlite_databases {

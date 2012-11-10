@@ -4,7 +4,7 @@ use strict;
 # testing process with no id file
 
 use CPAN::Testers::Data::Release;
-use Test::More tests => 7;
+use Test::More tests => 10;
 
 my @ROWS = (
     q{Crypt-Salt|0.01|9348320|94812eb8-e604-11df-b986-f0a4f41852f9|1|1|1|1|132|0|0|1},
@@ -41,7 +41,7 @@ eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
 isa_ok($obj,'CPAN::Testers::Data::Release');
 
 SKIP: {
-    skip "Problem creating object", 6 unless($obj);
+    skip "Problem creating object", 9 unless($obj);
 
     # reset DB
     $obj->{CPANSTATS}{dbh}->do_query('delete from release_summary');
@@ -65,6 +65,24 @@ SKIP: {
     is($rows[0]->{count}, 9, "row count for release");
 
     is(-f $idfile,undef,'.. no idfile after from last');
+
+
+    # check logs
+    my $log = 't/_DBDIR/release.log';
+    my $fh = IO::File->new($log,'r');
+    SKIP: {
+        skip "Unable to open log file: $!", 3 unless($fh);
+
+        my $text;
+        while (<$fh>) { $text .= $_ }
+
+        like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Create backup database!);
+        like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Find new start!);
+        like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Backup completed!);
+
+        $fh->close;
+    }
+
 }
 
 sub insert_records {
