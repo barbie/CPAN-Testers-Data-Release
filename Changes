@@ -1,6 +1,8 @@
 Revision history for Perl distribution CPAN-Testers-Data-Release
 ================================================================
 
+        - added missing prequisite.
+
 0.04    2012-11-11
         - spelling fixes. (thanks to Florian Schlichting & Gregor Herrmann).
         - change file dates changed to meet W3CDTF standards.
