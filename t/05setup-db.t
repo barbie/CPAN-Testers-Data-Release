@@ -151,8 +151,7 @@ sub create_sqlite_databases {
             fail        INTEGER,
             na          INTEGER,
             unknown     INTEGER,
-            PRIMARY KEY (id,guid),
-            INDEX (dist,version)
+            PRIMARY KEY (id,guid)
         )'
     );
 
