@@ -36,53 +36,56 @@ my $config = 't/_DBDIR/test-config.ini';
 my $idfile = 't/_DBDIR/idfile.txt';
 unlink $idfile if -f $idfile;
 
-my $obj;
-eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
-isa_ok($obj,'CPAN::Testers::Data::Release');
-
 SKIP: {
-    skip "Problem creating object", 9 unless($obj);
+    skip "Test::Database required for DB testing", 10 unless(-f $config);
 
-    # reset DB
-    $obj->{CPANSTATS}{dbh}->do_query('delete from release_summary');
-    insert_records($obj,\@ROWS);
+    my $obj;
+    eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
+    isa_ok($obj,'CPAN::Testers::Data::Release');
 
-    is(-f $idfile,undef,'.. no idfile at start');
-
-    my @rows = $obj->{CPANSTATS}{dbh}->get_query('hash','select count(*) as count from release_summary');
-    is($rows[0]->{count}, 22, "row count for release_summary");
-
-    $obj->backup_from_start;  # from start
-    
-    is(-f $idfile,undef,'.. no idfile after from start');
-
-    @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
-    is($rows[0]->{count}, 9, "row count for release");
-
-    $obj->backup_from_last;  # from last
-
-    @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
-    is($rows[0]->{count}, 9, "row count for release");
-
-    is(-f $idfile,undef,'.. no idfile after from last');
-
-
-    # check logs
-    my $log = 't/_DBDIR/release.log';
-    my $fh = IO::File->new($log,'r');
     SKIP: {
-        skip "Unable to open log file: $!", 3 unless($fh);
+        skip "Problem creating object", 9 unless($obj);
 
-        my $text;
-        while (<$fh>) { $text .= $_ }
+        # reset DB
+        $obj->{CPANSTATS}{dbh}->do_query('delete from release_summary');
+        insert_records($obj,\@ROWS);
 
-        like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Create backup database!);
-        like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Find new start!);
-        like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Backup completed!);
+        is(-f $idfile,undef,'.. no idfile at start');
 
-        $fh->close;
+        my @rows = $obj->{CPANSTATS}{dbh}->get_query('hash','select count(*) as count from release_summary');
+        is($rows[0]->{count}, 22, "row count for release_summary");
+
+        $obj->backup_from_start;  # from start
+        
+        is(-f $idfile,undef,'.. no idfile after from start');
+
+        @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
+        is($rows[0]->{count}, 9, "row count for release");
+
+        $obj->backup_from_last;  # from last
+
+        @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
+        is($rows[0]->{count}, 9, "row count for release");
+
+        is(-f $idfile,undef,'.. no idfile after from last');
+
+
+        # check logs
+        my $log = 't/_DBDIR/release.log';
+        my $fh = IO::File->new($log,'r');
+        SKIP: {
+            skip "Unable to open log file: $!", 3 unless($fh);
+
+            my $text;
+            while (<$fh>) { $text .= $_ }
+
+            like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Create backup database!);
+            like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Find new start!);
+            like($text, qr!\d+/\d+/\d+ \d+:\d+:\d+ Backup completed!);
+
+            $fh->close;
+        }
     }
-
 }
 
 sub insert_records {

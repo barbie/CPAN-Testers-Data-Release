@@ -23,54 +23,58 @@ my @ROWS = (
 my $config = 't/_DBDIR/10attributes.ini';
 my $idfile = 't/_DBDIR/idfile.txt';
 
-my $obj;
-eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
-isa_ok($obj,'CPAN::Testers::Data::Release');
-
 SKIP: {
-    skip "Problem creating object", 10 unless($obj);
+    skip "Test::Database required for DB testing", 11 unless(-f $config);
 
-    is(lastid(),0,'.. lastid is 0 at start');
+    my $obj;
+    eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
+    isa_ok($obj,'CPAN::Testers::Data::Release');
 
-    my @rows = $obj->{CPANSTATS}{dbh}->get_query('hash','select count(*) as count from release_summary');
-    is($rows[0]->{count}, 11, "row count for release_summary");
+    SKIP: {
+        skip "Problem creating object", 10 unless($obj);
 
-    $obj->{clean} = 1;
-    $obj->process;
+        is(lastid(),0,'.. lastid is 0 at start');
 
-    is(lastid(),0,'.. lastid is 0 after clean');
+        my @rows = $obj->{CPANSTATS}{dbh}->get_query('hash','select count(*) as count from release_summary');
+        is($rows[0]->{count}, 11, "row count for release_summary");
 
-    # a few extras
-    insert_records($obj,\@ROWS);
+        $obj->{clean} = 1;
+        $obj->process;
 
-    @rows = $obj->{CPANSTATS}{dbh}->get_query('hash','select count(*) as count from release_summary');
-    is($rows[0]->{count}, 21, "row count for release_summary");
+        is(lastid(),0,'.. lastid is 0 after clean');
 
-    $obj->{clean} = 0;
-    $obj->process;  # from start
-    
-    is(lastid(),9348322,'.. lastid is 0 after from start');
+        # a few extras
+        insert_records($obj,\@ROWS);
 
-    @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
-    is($rows[0]->{count}, 9, "row count for release");
+        @rows = $obj->{CPANSTATS}{dbh}->get_query('hash','select count(*) as count from release_summary');
+        is($rows[0]->{count}, 21, "row count for release_summary");
 
-    $obj->process;  # from last
+        $obj->{clean} = 0;
+        $obj->process;  # from start
+        
+        is(lastid(),9348322,'.. lastid is 0 after from start');
 
-    @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
-    is($rows[0]->{count}, 9, "row count for release");
+        @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
+        is($rows[0]->{count}, 9, "row count for release");
 
-    is(lastid(),9348322,'.. lastid is 0 after from last');
+        $obj->process;  # from last
 
-    # with missing id file
-    unlink $idfile if -f $idfile;
+        @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
+        is($rows[0]->{count}, 9, "row count for release");
 
-    $obj->process;  # from last
+        is(lastid(),9348322,'.. lastid is 0 after from last');
 
-    @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
-    is($rows[0]->{count}, 9, "row count for release");
+        # with missing id file
+        unlink $idfile if -f $idfile;
 
-    is(lastid(),9348322,'.. lastid is 0 after from last');
+        $obj->process;  # from last
 
+        @rows = $obj->{RELEASE}{dbh}->get_query('hash','select count(*) as count from release');
+        is($rows[0]->{count}, 9, "row count for release");
+
+        is(lastid(),9348322,'.. lastid is 0 after from last');
+
+    }
 }
 
 sub lastid {

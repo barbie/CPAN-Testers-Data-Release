@@ -7,7 +7,7 @@ use Test::Trap;
 {
     use CPAN::Testers::Data::Release;
 
-    my $VERSION = '0.04';
+    my $VERSION = '0.05';
 
     my $obj;
     my $stdout;

@@ -3,8 +3,8 @@ use strict;
 
 $|=1;
 
-use Test::More tests => 2;
 use File::Path;
+use Test::More tests => 2;
 
 eval "use Test::Database";
 my $notd = $@ ? 1 : 0;

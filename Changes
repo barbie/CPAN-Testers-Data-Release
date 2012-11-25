@@ -1,7 +1,9 @@
 Revision history for Perl distribution CPAN-Testers-Data-Release
 ================================================================
 
+0.05    2012-11-25
         - added missing prequisite.
+        - fixed skip logic if Test::Database not available.
 
 0.04    2012-11-11
         - spelling fixes. (thanks to Florian Schlichting & Gregor Herrmann).

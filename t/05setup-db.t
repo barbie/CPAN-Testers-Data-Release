@@ -6,11 +6,10 @@ $|=1;
 #----------------------------------------------------------------------------
 # Library Modules
 
-use Test::More tests => 2;
 use CPAN::Testers::Common::DBUtils;
-
-use File::Path;
 use File::Basename;
+use File::Path;
+use Test::More;
 
 #----------------------------------------------------------------------------
 # Variables
@@ -35,10 +34,12 @@ my @ROWS = (
 #----------------------------------------------------------------------------
 # Tests
 
+mkpath( 't/_DBDIR' );
+
 eval "use Test::Database";
 plan skip_all => "Test::Database required for DB testing" if($@);
 
-#plan 'no_plan';
+plan tests => 2;
 
 my $td;
 if($td = Test::Database->handle( 'mysql' )) {
@@ -60,9 +61,8 @@ SKIP: {
     my %options = map {my $v = $opts{$_}; defined($v) ? ($_ => $v) : () }
                         qw(driver database dbfile dbhost dbport dbuser dbpass);
 
+    #diag(Dumper(\%options));
     create_config(\%options);
-
-#diag(Dumper(\%options));
 
     # create new instance from Test::Database object
     my $ct = CPAN::Testers::Common::DBUtils->new(%options);
@@ -84,7 +84,6 @@ sub create_config {
     # main config
     my $f = 't/_DBDIR/test-config.ini';
     unlink $f if -f $f;
-    mkpath( dirname($f) );
 
     my $dbcfg = join("\n", map { "$_=$options->{$_}" } grep { $options->{$_}} qw(driver database dbfile dbhost dbport dbuser dbpass) );
 

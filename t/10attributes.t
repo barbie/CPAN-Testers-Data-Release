@@ -6,40 +6,44 @@ use Test::More tests => 13;
 
 my $config = 't/_DBDIR/10attributes.ini';
 
-my $obj;
-eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
-diag($@) if($@);
-isa_ok($obj,'CPAN::Testers::Data::Release');
-
 SKIP: {
-    skip "Problem creating object", 12 unless($obj);
+    skip "Test::Database required for DB testing", 13 unless(-f $config);
 
-    # Class::Accessor::Fast method tests
+    my $obj;
+    eval { $obj = CPAN::Testers::Data::Release->new(config => $config) };
+    diag($@) if($@);
+    isa_ok($obj,'CPAN::Testers::Data::Release');
 
-    # predefined attributes
-    foreach my $k ( qw/
-        idfile
-        logclean
-    / ){
-      my $label = "[$k]";
-      SKIP: {
-        ok( $obj->can($k), "$label can" ) or skip "'$k' attribute missing", 3;
-        isnt( $obj->$k(), undef, "$label has default" );
-        is( $obj->$k(123), 123, "$label set" ); # chained, so returns object, not value.
-        is( $obj->$k, 123, "$label get" );
-      };
-    }
+    SKIP: {
+        skip "Problem creating object", 12 unless($obj);
 
-    # undefined attributes
-    foreach my $k ( qw/
-        logfile
-    / ){
-      my $label = "[$k]";
-      SKIP: {
-        ok( $obj->can($k), "$label can" ) or skip "'$k' attribute missing", 3;
-        is( $obj->$k(), undef, "$label has no default" );
-        is( $obj->$k(123), 123, "$label set" ); # chained, so returns object, not value.
-        is( $obj->$k, 123, "$label get" );
-      };
+        # Class::Accessor::Fast method tests
+
+        # predefined attributes
+        foreach my $k ( qw/
+            idfile
+            logclean
+        / ){
+          my $label = "[$k]";
+          SKIP: {
+            ok( $obj->can($k), "$label can" ) or skip "'$k' attribute missing", 3;
+            isnt( $obj->$k(), undef, "$label has default" );
+            is( $obj->$k(123), 123, "$label set" ); # chained, so returns object, not value.
+            is( $obj->$k, 123, "$label get" );
+          };
+        }
+
+        # undefined attributes
+        foreach my $k ( qw/
+            logfile
+        / ){
+          my $label = "[$k]";
+          SKIP: {
+            ok( $obj->can($k), "$label can" ) or skip "'$k' attribute missing", 3;
+            is( $obj->$k(), undef, "$label has no default" );
+            is( $obj->$k(123), 123, "$label set" ); # chained, so returns object, not value.
+            is( $obj->$k, 123, "$label get" );
+          };
+        }
     }
 }
