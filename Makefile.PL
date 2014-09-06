@@ -25,7 +25,7 @@ WriteMakefile(
 
         # build/test prereqs
         'Test::More'                        => '0.70',
-        'Test::Trap'                        => '0',
+        'Test::Trap'                        => '0'
 
     }
 );
