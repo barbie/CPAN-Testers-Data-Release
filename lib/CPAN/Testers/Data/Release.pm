@@ -279,7 +279,8 @@ sub _init_options {
 
     # default to API settings if no command line option
     for(qw(config help version)) {
-        $options{$_} ||= $hash{$_}  if(defined $hash{$_});
+        next    unless(!defined $options{$_} && defined $hash{$_});
+        $options{$_} = $hash{$_};
     }
 
     $self->help(1)  if($options{help});

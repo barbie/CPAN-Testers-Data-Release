@@ -5,6 +5,7 @@ Revision history for CPAN-Testers-Data-Release
         - added repository link to META.yml.
         - added homepage link to META.json.
         - extended META testing.
+        - reordered configuration option setting.
 
 0.05    2012-11-25
         - added missing prequisite.
