@@ -1,5 +1,7 @@
-Revision history for Perl distribution CPAN-Testers-Data-Release
-================================================================
+Revision history for CPAN-Testers-Data-Release
+==============================================
+
+        - fixed license fields in META.json to be lists.
 
 0.05    2012-11-25
         - added missing prequisite.
