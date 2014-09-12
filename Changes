@@ -1,6 +1,7 @@
 Revision history for CPAN-Testers-Data-Release
 ==============================================
 
+0.06    2014-09-12
         - fixed license fields in META.json to be lists.
         - added repository link to META.yml.
         - added homepage link to META.json.

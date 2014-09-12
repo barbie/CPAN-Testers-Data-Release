@@ -1,6 +1,6 @@
 {
     "name": "CPAN-Testers-Data-Release",
-    "version": "0.05",
+    "version": "0.06",
     "abstract": "CPAN Testers Release database generator",
     "author": [
         "Barbie (BARBIE) <barbie@cpan.org>"
@@ -52,7 +52,7 @@
     "provides": {
         "CPAN::Testers::Data::Release": {
             "file": "lib/CPAN/Testers/Data/Release.pm",
-            "version": "0.05"
+            "version": "0.06"
         }
     },
     "no_index": {
